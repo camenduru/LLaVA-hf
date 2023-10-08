@@ -323,6 +323,8 @@ def http_bot(
 title_markdown = """
 # 🌋 LLaVA: Large Language and Vision Assistant
 [[Project Page]](https://llava-vl.github.io) [[Paper]](https://arxiv.org/abs/2304.08485) [[Code]](https://github.com/haotian-liu/LLaVA) [[Model]](https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md)
+
+ONLY WORKS WITH GPU!
 """
 
 tos_markdown = """
@@ -582,10 +584,10 @@ if __name__ == "__main__":
 
     model_path = "liuhaotian/llava-v1.5-7b"
 
-    preload_models(model_path)
+    # preload_models(model_path)
 
     controller_proc = start_controller()
-    worker_proc = start_worker(model_path)
+    # worker_proc = start_worker(model_path)
 
     # Wait for worker and controller to start
     time.sleep(10)
