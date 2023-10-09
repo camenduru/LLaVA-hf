@@ -584,10 +584,10 @@ if __name__ == "__main__":
 
     model_path = "liuhaotian/llava-v1.5-7b"
 
-    # preload_models(model_path)
+    preload_models(model_path)
 
     controller_proc = start_controller()
-    # worker_proc = start_worker(model_path)
+    worker_proc = start_worker(model_path)
 
     # Wait for worker and controller to start
     time.sleep(10)
