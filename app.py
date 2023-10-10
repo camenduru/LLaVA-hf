@@ -76,10 +76,26 @@ def load_demo_refresh_model_list(request: gr.Request):
     logger.info(f"load_demo. ip: {request.client.host}")
     models = get_model_list()
     state = default_conversation.copy()
-    dropdown_update = gr.Dropdown.update(
-        choices=models, value=models[0] if len(models) > 0 else ""
+
+    models_downloaded = True if models else False
+
+    model_dropdown_kwargs = {
+        "choices": [],
+        "value": "Downloading the models...",
+        "interactive": models_downloaded,
+    }
+
+    if models_downloaded:
+        model_dropdown_kwargs["choices"] = models
+        model_dropdown_kwargs["value"] = models[0]
+
+    models_dropdown_update = gr.Dropdown.update(**model_dropdown_kwargs)
+
+    send_button_update = gr.Button.update(
+        interactive=models_downloaded,
     )
-    return state, dropdown_update
+
+    return state, models_dropdown_update, send_button_update
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
@@ -375,8 +391,8 @@ def build_demo(embed_mode):
                 with gr.Row(elem_id="model_selector_row"):
                     model_selector = gr.Dropdown(
                         choices=models,
-                        value=models[0] if len(models) > 0 else "",
-                        interactive=True,
+                        value=models[0] if models else "Downloading the models...",
+                        interactive=True if models else False,
                         show_label=False,
                         container=False,
                     )
@@ -438,7 +454,9 @@ def build_demo(embed_mode):
                     with gr.Column(scale=8):
                         textbox.render()
                     with gr.Column(scale=1, min_width=50):
-                        submit_btn = gr.Button(value="Send", variant="primary")
+                        submit_btn = gr.Button(
+                            value="Send", variant="primary", interactive=False
+                        )
                 with gr.Row(elem_id="buttons") as button_row:
                     upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
                     downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
@@ -509,7 +527,9 @@ def build_demo(embed_mode):
                 _js=get_window_url_params,
             )
         elif args.model_list_mode == "reload":
-            demo.load(load_demo_refresh_model_list, None, [state, model_selector])
+            demo.load(
+                load_demo_refresh_model_list, None, [state, model_selector, submit_btn]
+            )
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
@@ -532,10 +552,10 @@ def start_controller():
 
 def start_worker(model_path: str, bits=16):
     logger.info(f"Starting the model worker for the model {model_path}")
-    model_name = model_path.strip('/').split('/')[-1]
+    model_name = model_path.strip("/").split("/")[-1]
     assert bits in [4, 8, 16], "It can be only loaded with 16-bit, 8-bit, and 4-bit."
     if bits != 16:
-        model_name += f'-{bits}bit'
+        model_name += f"-{bits}bit"
     worker_command = [
         "python",
         "-m",
@@ -550,23 +570,8 @@ def start_worker(model_path: str, bits=16):
         model_name,
     ]
     if bits != 16:
-        worker_command += [f'--load-{bits}bit']
+        worker_command += [f"--load-{bits}bit"]
     return subprocess.Popen(worker_command)
-
-
-def preload_models(model_path: str):
-    import torch
-
-    from llava.model import LlavaLlamaForCausalLM
-
-    model = LlavaLlamaForCausalLM.from_pretrained(
-        model_path, low_cpu_mem_usage=True, torch_dtype=torch.float16
-    )
-    vision_tower = model.get_vision_tower()
-    vision_tower.load_model()
-
-    del vision_tower
-    del model
 
 
 def get_args():
@@ -601,19 +606,20 @@ if __name__ == "__main__":
     model_path = "liuhaotian/llava-v1.5-13b"
     bits = int(os.getenv("bits", 8))
 
-    preload_models(model_path)
-
     controller_proc = start_controller()
     worker_proc = start_worker(model_path, bits=bits)
 
     # Wait for worker and controller to start
     time.sleep(10)
 
+    exit_status = 0
     try:
         start_demo(args)
     except Exception as e:
-        worker_proc.terminate()
-        controller_proc.terminate()
-
         print(e)
-        sys.exit(1)
+        exit_status = 1
+    finally:
+        worker_proc.kill()
+        controller_proc.kill()
+
+        sys.exit(exit_status)
