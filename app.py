@@ -325,6 +325,14 @@ title_markdown = """
 [[Project Page]](https://llava-vl.github.io) [[Paper]](https://arxiv.org/abs/2304.08485) [[Code]](https://github.com/haotian-liu/LLaVA) [[Model]](https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md)
 
 ONLY WORKS WITH GPU!
+
+You can load the model with 8-bit or 4-bit quantization to make it fit in smaller hardwares. Setting the environment variable `bits` to control the quantization.
+
+Recommended configurations:
+| Hardware          | A10G-Large (24G) | T4-Medium (15G) | A100-Large (40G) |
+|-------------------|------------------|-----------------|------------------|
+| **Bits**          | 8 (default)      | 4               | 16               |
+
 """
 
 tos_markdown = """
@@ -522,8 +530,12 @@ def start_controller():
     return subprocess.Popen(controller_command)
 
 
-def start_worker(model_path: str):
+def start_worker(model_path: str, bits=16):
     logger.info(f"Starting the model worker for the model {model_path}")
+    model_name = model_path.strip('/').split('/')[-1]
+    assert bits in [4, 8, 16], "It can be only loaded with 16-bit, 8-bit, and 4-bit."
+    if bits != 16:
+        model_name += f'-{bits}bit'
     worker_command = [
         "python",
         "-m",
@@ -534,7 +546,11 @@ def start_worker(model_path: str):
         "http://localhost:10000",
         "--model-path",
         model_path,
+        "--model-name",
+        model_name,
     ]
+    if bits != 16:
+        worker_command += [f'--load-{bits}bit']
     return subprocess.Popen(worker_command)
 
 
@@ -582,12 +598,13 @@ if __name__ == "__main__":
     args = get_args()
     logger.info(f"args: {args}")
 
-    model_path = "liuhaotian/llava-v1.5-7b"
+    model_path = "liuhaotian/llava-v1.5-13b"
+    bits = int(os.getenv("bits", 8))
 
     preload_models(model_path)
 
     controller_proc = start_controller()
-    worker_proc = start_worker(model_path)
+    worker_proc = start_worker(model_path, bits=bits)
 
     # Wait for worker and controller to start
     time.sleep(10)

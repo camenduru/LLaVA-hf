@@ -8,8 +8,8 @@ numpy
 requests
 sentencepiece
 tokenizers>=0.12.1
-torch
-torchvision
+torch==2.0.1
+torchvision==0.15.2
 uvicorn
 wandb
 shortuuid
