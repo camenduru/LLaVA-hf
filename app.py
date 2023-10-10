@@ -345,7 +345,7 @@ ONLY WORKS WITH GPU!
 You can load the model with 8-bit or 4-bit quantization to make it fit in smaller hardwares. Setting the environment variable `bits` to control the quantization.
 
 Recommended configurations:
-| Hardware          | A10G-Large (24G) | T4-Medium (15G) | A100-Large (40G) |
+| Hardware          | A10G-Large (24G) | T4-Small (16G)  | A100-Large (40G) |
 |-------------------|------------------|-----------------|------------------|
 | **Bits**          | 8 (default)      | 4               | 16               |
 
