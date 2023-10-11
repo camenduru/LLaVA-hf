@@ -342,12 +342,13 @@ title_markdown = """
 
 ONLY WORKS WITH GPU!
 
-You can load the model with 8-bit or 4-bit quantization to make it fit in smaller hardwares. Setting the environment variable `bits` to control the quantization.
+You can load the model with 4-bit or 8-bit quantization to make it fit in smaller hardwares. Setting the environment variable `bits` to control the quantization.
+*Note: 8-bit seems to be slower than both 4-bit/16-bit. Although it has enough VRAM to support 8-bit, until we figure out the inference speed issue, we recommend 4-bit for A10G for the best efficiency.*
 
 Recommended configurations:
-| Hardware          | A10G-Large (24G) | T4-Small (16G)  | A100-Large (40G) |
-|-------------------|------------------|-----------------|------------------|
-| **Bits**          | 8 (default)      | 4               | 16               |
+| Hardware          | T4-Small (16G)  | A10G-Small (24G) | A100-Large (40G) |
+|-------------------|-----------------|------------------|------------------|
+| **Bits**          | 4 (default)     | 4                | 16               |
 
 """
 
