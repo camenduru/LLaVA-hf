@@ -604,7 +604,7 @@ if __name__ == "__main__":
     args = get_args()
     logger.info(f"args: {args}")
 
-    model_path = "liuhaotian/llava-v1.5-13b"
+    model_path = "liuhaotian/llava-v1.5-13b-shard3gb"
     bits = int(os.getenv("bits", 8))
 
     controller_proc = start_controller()
